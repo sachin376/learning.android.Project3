@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Project3</string>
+    <string name="score">Score</string>
+    <string name="zero">0</string>
+    <string name="pause">Pause</string>
+    <string name="end">End</string>
+    <string name="lives">Lives</string>
+    <string name="three">3</string>
+    <string name="newGame">New</string>
+</resources>
