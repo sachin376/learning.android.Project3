@@ -63,14 +63,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.pause:
                 switch (pauseButton.getText().toString()) {
                     case BUTTON_LABEL_PAUSE:
-                        gameStatus = GameStatus.PAUSED;
-                        pauseButton.setText(BUTTON_LABEL_RESUME);
-                        gameBoard.setGameStatus(gameStatus);
+                        if(gameStatus == GameStatus.PLAYING){
+                            pauseButton.setText(BUTTON_LABEL_RESUME);
+                            gameStatus = GameStatus.PAUSED;
+                            gameBoard.setGameStatus(GameStatus.PAUSED);
+                        }
+                        try {
+                            gameBoard.pause();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         break;
                     case BUTTON_LABEL_RESUME:
-                        gameStatus = GameStatus.PLAYING;
-                        pauseButton.setText(BUTTON_LABEL_PAUSE);
-                        gameBoard.setGameStatus(gameStatus);
+                        if(gameStatus == GameStatus.PAUSED){
+                            pauseButton.setText(BUTTON_LABEL_PAUSE);
+                            gameStatus = GameStatus.PLAYING;
+                            gameBoard.setGameStatus(GameStatus.PLAYING);
+                            gameBoard.resume();
+                        }
                         break;
                 }
                 break;
@@ -78,19 +88,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 switch (newButton.getText().toString()) {
                     case BUTTON_LABEL_NEW:
                         gameStatus = GameStatus.NEW;
+                        pauseButton.setText(BUTTON_LABEL_PAUSE);
                         newButton.setText(BUTTON_LABEL_START);
                         gameBoard.setGameStatus(gameStatus);
                         gameBoard.newGame();
-
                         break;
                     case BUTTON_LABEL_START:
                         gameStatus = GameStatus.PLAYING;
+                        pauseButton.setText(BUTTON_LABEL_PAUSE);
                         newButton.setText(BUTTON_LABEL_END);
                         gameBoard.setGameStatus(gameStatus);
                         gameBoard.startGame();
                         break;
                     case BUTTON_LABEL_END:
                         gameStatus = GameStatus.END;
+                        pauseButton.setText(BUTTON_LABEL_PAUSE);
                         newButton.setText(BUTTON_LABEL_NEW);
                         gameBoard.setGameStatus(gameStatus);
                         gameBoard.endGame();
@@ -99,4 +111,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
     }
+
+//    todo : White circles drop, checking collision, updating leaves and score (with label),   White Circles repeat, Zero lives end game
+
 }

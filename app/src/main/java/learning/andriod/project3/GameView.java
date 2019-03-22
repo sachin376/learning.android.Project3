@@ -19,12 +19,12 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     private static final String LOG_TAG = "sk";
 
-    private static final int PLAYER_BALL_HEIGHT = 1500;
+    private static final int BALL_FALLING_HEIGHT = 1500;
     private static final int PLAYER_BALL_SPEED = 50;
+    private static final float ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE = 1.25f;
     private static final Paint blackFill;
     private static final Paint redFill;
     private static float gameBoardWidth;
-    private static float gameBoardHeight;
 
     private GameStatus gameStatus = GameStatus.NEW;
     private GameView gameBoard;
@@ -36,7 +36,8 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     private GestureDetector gestureDetector;
     private TimerTask growBallSizeTask;
-//    private Canvas canvas;
+    private TimerTask enemyBallFallingTask;
+    private boolean isGamePaused = false;
 
     static {
         blackFill = new Paint();
@@ -69,14 +70,51 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
         gameBoard.setOnTouchListener(this);
 
         gameBoardWidth = gameBoard.getWidth();
-        gameBoardHeight = gameBoard.getHeight();
-        playerBall = new Ball(gameBoardWidth / 2, PLAYER_BALL_HEIGHT, 40, blackFill);
+//        gameBoardHeight = gameBoard.getHeight();
+        playerBall = new Ball(gameBoardWidth / 2, BALL_FALLING_HEIGHT, 40, blackFill);
     }
 
     public void startGame() {
         gameBoard = findViewById(R.id.game_board);
         updateGameStats(0, 3);
+        fallEnemyBalls();
     }
+
+    private void fallEnemyBalls() {
+        Log.d("testing", "fall enemy balls");
+        enemyBallFallingTask = new TimerTask() {
+            @Override
+            public void run() {
+                Log.d("testing", "Ball is falling");
+                if(enemyBalls != null){
+                    for (Ball enemyBall : enemyBalls) {
+                        changeFallingBallPosition(enemyBall);
+                    }
+                    invalidate();
+                }
+            }
+        };
+        Timer everySecond = new Timer();
+        everySecond.scheduleAtFixedRate(enemyBallFallingTask, 100, 500);
+    }
+
+
+
+    public void changeFallingBallPosition(Ball enemyBall) {
+        float newY;
+        newY = enemyBall.getCenterY() + enemyBall.getFallingSpeed();
+//        if(newY == BALL_FALLING_HEIGHT - enemyBall.getRadius()){
+//            newY = 0 - enemyBall.getRadius();
+//            enemyBall.setFallingSpeed(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
+//        }
+        if(newY > BALL_FALLING_HEIGHT - enemyBall.getRadius()){
+            newY = 0 - enemyBall.getRadius();
+            enemyBall.setFallingSpeed(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
+        }
+        enemyBall.setCenterY(newY);
+
+    }
+
 
 
     public void updateGameStats(int scoreValue, int livesValue) {
@@ -92,6 +130,9 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
         gameBoard = findViewById(R.id.game_board);
         gameBoard.setOnTouchListener(this);
+        if(enemyBallFallingTask != null){
+            enemyBallFallingTask.cancel();
+        }
         gameBoard.clearAnimation();
         this.enemyBalls = null;
 //        gameBoard.removeAllViews();
@@ -161,6 +202,7 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
         changePosition(event.getX());
         Log.i(LOG_TAG, "after ball getCenterX  " + playerBall.getCenterX());
         Log.i(LOG_TAG, "gameBoardWidth " + gameBoardWidth);
+//        Log.i(LOG_TAG, "gameBoardHeight " + gameBoardHeight);
         return true;
     }
 
@@ -260,5 +302,19 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     public void setGameStatus(GameStatus gameStatus) {
         this.gameStatus = gameStatus;
+    }
+
+    public void pause() throws InterruptedException {
+        isGamePaused = true;
+        if(enemyBallFallingTask != null){
+            enemyBallFallingTask.cancel();
+        }
+        enemyBallFallingTask = null;
+    }
+
+
+    public void resume() {
+        isGamePaused = false;
+        fallEnemyBalls();
     }
 }
