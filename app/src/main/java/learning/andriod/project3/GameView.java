@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Timer;
@@ -20,14 +21,19 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     private static final String LOG_TAG = "sk";
 
     private static final int BALL_FALLING_HEIGHT = 1500;
+    private static final int PLAYER_BALL_RADIUS = 60;
+    private static final int BASE_LINE_HEIGHT = BALL_FALLING_HEIGHT + PLAYER_BALL_RADIUS;
     private static final int PLAYER_BALL_SPEED = 50;
+
     private static final float ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE = 1.25f;
     private static final Paint blackFill;
     private static final Paint redFill;
+    private static final Paint bottomLinePaint;
     private static float gameBoardWidth;
 
     private GameStatus gameStatus = GameStatus.NEW;
     private GameView gameBoard;
+    private static TextView score;
     private static Ball playerBall;
     private ArrayList<Ball> enemyBalls;
 
@@ -44,6 +50,14 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
         blackFill.setColor(Color.BLACK);
         redFill = new Paint();
         redFill.setColor(Color.RED);
+        bottomLinePaint = new Paint();
+        bottomLinePaint.setColor(Color.rgb(255, 152, 0));
+        bottomLinePaint.setStrokeWidth(10f);
+    }
+
+    public interface UpdateGameStatListener {
+        public void updateScore(int score);
+        public void updateLives(int lives);
     }
 
     public GameView(Context context, AttributeSet xmlAttributes) {
@@ -54,6 +68,7 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     protected void onDraw(Canvas canvas) {
 //        super.onDraw(canvas);
 //        this.canvas = canvas;
+        canvas.drawLine(0.0f, (float)BASE_LINE_HEIGHT, (float)gameBoardWidth, (float)BASE_LINE_HEIGHT, bottomLinePaint);
         if (playerBall != null) {
             playerBall.drawOn(canvas);
         }
@@ -67,16 +82,20 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     public void newGame() {
         gameBoard = findViewById(R.id.game_board);
+        score = findViewById(R.id.score);
         gameBoard.setOnTouchListener(this);
 
         gameBoardWidth = gameBoard.getWidth();
 //        gameBoardHeight = gameBoard.getHeight();
-        playerBall = new Ball(gameBoardWidth / 2, BALL_FALLING_HEIGHT, 40, blackFill);
+        playerBall = new Ball(gameBoardWidth / 2, BALL_FALLING_HEIGHT, PLAYER_BALL_RADIUS, blackFill);
+
+        this.scoreValue = 0;
+        this.livesValue = 3;
+        updateGameStats();
     }
 
     public void startGame() {
         gameBoard = findViewById(R.id.game_board);
-        updateGameStats(0, 3);
         fallEnemyBalls();
     }
 
@@ -90,7 +109,6 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
                     for (Ball enemyBall : enemyBalls) {
                         changeFallingBallPosition(enemyBall);
                     }
-                    invalidate();
                 }
             }
         };
@@ -103,27 +121,55 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     public void changeFallingBallPosition(Ball enemyBall) {
         float newY;
         newY = enemyBall.getCenterY() + enemyBall.getFallingSpeed();
-//        if(newY == BALL_FALLING_HEIGHT - enemyBall.getRadius()){
-//            newY = 0 - enemyBall.getRadius();
-//            enemyBall.setFallingSpeed(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
-//        }
-        if(newY > BALL_FALLING_HEIGHT - enemyBall.getRadius()){
-            newY = 0 - enemyBall.getRadius();
-            enemyBall.setFallingSpeed(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
+        float ballEndPosition = BASE_LINE_HEIGHT - enemyBall.getRadius();
+
+        if(checkCollision(enemyBall)){
+            Log.d("testing", "Collision Happened");
+            livesValue--;
+            newY = ballNextRound(enemyBall, 0);
+            if(livesValue == 0){
+                endGame();
+            }
+        }
+
+        if( (newY - enemyBall.getFallingSpeed()) == ballEndPosition){
+            Log.d("testing", " inside lastPostion");
+            newY = ballNextRound(enemyBall, enemyBall.getScore());
+        }
+
+        if(newY > BASE_LINE_HEIGHT - enemyBall.getRadius()){
+            Log.d("testing", " Out of boundary ");
+            newY = ballEndPosition;
         }
         enemyBall.setCenterY(newY);
+        invalidate();
+    }
+
+    private float ballNextRound(Ball enemyBall, int scoreToAdd){
+        float newY = 0 - enemyBall.getRadius();
+        this.scoreValue += scoreToAdd;
+        updateGameStats();
+        if(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE > this.BASE_LINE_HEIGHT ){
+            Log.d("testing", " Max speed reached. Successfully completed the game");
+            endGame();
+        }
+        enemyBall.setFallingSpeed(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
+        enemyBall.setScore(enemyBall.getScore()+1);
+        return newY;
 
     }
 
+    private boolean checkCollision(Ball enemyBall) {
+        double distanceBetweenEnemyBallAndPlayerBall = calculateDistanceBetweenEnemyBallAndPlayerBall(enemyBall);
+        return (distanceBetweenEnemyBallAndPlayerBall > (playerBall.getRadius() + enemyBall.getRadius()))? false : true;
+    }
 
+    private double calculateDistanceBetweenEnemyBallAndPlayerBall(Ball enemyBall) {
+        float deltaX = enemyBall.getCenterX() - playerBall.getCenterX();
+        float deltaY = enemyBall.getCenterY() - playerBall.getCenterY();
+        double distance = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+        return distance;
 
-    public void updateGameStats(int scoreValue, int livesValue) {
-        this.scoreValue = scoreValue;
-        this.livesValue = livesValue;
-
-        // todo : need to update labels
-//        score.setText(String.valueOf(scoreValue));
-//        lives.setText(String.valueOf(livesValue));
     }
 
     public void endGame() {
@@ -197,12 +243,10 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     private boolean moveBall(MotionEvent event) {
 
-//        Log.i(LOG_TAG,"before ball x " + playerBall.getX());
         Log.i(LOG_TAG, " before  ball getCenterX  " + playerBall.getCenterX());
         changePosition(event.getX());
         Log.i(LOG_TAG, "after ball getCenterX  " + playerBall.getCenterX());
         Log.i(LOG_TAG, "gameBoardWidth " + gameBoardWidth);
-//        Log.i(LOG_TAG, "gameBoardHeight " + gameBoardHeight);
         return true;
     }
 
@@ -316,5 +360,12 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     public void resume() {
         isGamePaused = false;
         fallEnemyBalls();
+    }
+
+    private void updateGameStats() {
+        UpdateGameStatListener listener = (UpdateGameStatListener) getContext();
+        listener.updateScore(this.scoreValue);
+        listener.updateLives(this.livesValue);
+        invalidate();
     }
 }

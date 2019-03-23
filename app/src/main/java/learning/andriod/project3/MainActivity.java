@@ -12,7 +12,7 @@ import android.widget.TextView;
 
 enum GameStatus { NEW, PLAYING, PAUSED, END }
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, GameView.UpdateGameStatListener{
 
     private static final String LOG_TAG = "sk";
     private static float screenWidth;
@@ -112,6 +112,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-//    todo : White circles drop, checking collision, updating leaves and score (with label),   White Circles repeat, Zero lives end game
+    @Override
+    public void updateScore(int score) {
+        this.score.setText(String.valueOf(score));
 
+    }
+
+    @Override
+    public void updateLives(int lives) {
+        this.lives.setText(String.valueOf(lives));
+
+    }
 }

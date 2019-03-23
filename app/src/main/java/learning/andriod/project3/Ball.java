@@ -5,12 +5,13 @@ import android.graphics.Paint;
 
 public class Ball {
 
-    private static final int ENEMY_BALL_INIT_FALLING_SPEED = 50;
+    private static final int ENEMY_BALL_INIT_FALLING_SPEED = 100;
     private float centerX;
     private float centerY;
     private float radius;
     private float fallingSpeed;
     private Paint paint;
+    private int score;
 
 
     public Ball(float x, float y, float radius, Paint paint) {
@@ -19,6 +20,7 @@ public class Ball {
         this.radius = radius;
         this.paint = paint;
         this.fallingSpeed = ENEMY_BALL_INIT_FALLING_SPEED;
+        this.score = 1;
 //        this.paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     }
 
@@ -73,5 +75,13 @@ public class Ball {
 
     public void setFallingSpeed(float fallingSpeed) {
         this.fallingSpeed = fallingSpeed;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
     }
 }
