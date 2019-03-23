@@ -9,7 +9,6 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -19,25 +18,26 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     private static final String LOG_TAG = "sk";
 
+    private GameView gameBoard;
+    private static float gameBoardWidth;
+    private GameStatus gameStatus = GameStatus.NEW;
     private static final int BALL_FALLING_HEIGHT = 1500;
-    private static final int PLAYER_BALL_RADIUS = 60;
-    private static final int BASE_LINE_HEIGHT = BALL_FALLING_HEIGHT + PLAYER_BALL_RADIUS;
-    private static final int PLAYER_BALL_SPEED = 50;
+    private static int scoreValue = 0;
+    private static int livesValue = 3;
 
+    private static Ball playerBall;
+    private static final int PLAYER_BALL_RADIUS = 60;
+    private static final int PLAYER_BALL_SPEED = 50;
+    private static final int BASE_LINE_HEIGHT = BALL_FALLING_HEIGHT + PLAYER_BALL_RADIUS;
+
+    private ArrayList<Ball> enemyBalls;
+    private static final int ENEMY_BALL_INIT_RADIUS = 20;       // Initial radius of circle from where ball growing animation starts
+    private static final int ENEMY_BALL_RADIUS_INCREMENT = 20;       // Ball growing increment value
     private static final float ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE = 1.25f;
+
     private static final Paint blackFill;
     private static final Paint redFill;
     private static final Paint bottomLinePaint;
-    private static float gameBoardWidth;
-
-    private GameStatus gameStatus = GameStatus.NEW;
-    private GameView gameBoard;
-    private static TextView score;
-    private static Ball playerBall;
-    private ArrayList<Ball> enemyBalls;
-
-    private static int scoreValue = 0;
-    private static int livesValue = 3;
 
     private GestureDetector gestureDetector;
     private TimerTask growBallSizeTask;
@@ -55,6 +55,7 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     public interface UpdateGameStatListener {
         void updateScore(int score);
+
         void updateLives(int lives);
     }
 
@@ -66,11 +67,11 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     protected void onDraw(Canvas canvas) {
 //        super.onDraw(canvas);
 //        this.canvas = canvas;
-        canvas.drawLine(0.0f, (float)BASE_LINE_HEIGHT, gameBoardWidth, (float)BASE_LINE_HEIGHT, bottomLinePaint);
+        canvas.drawLine(0.0f, (float) BASE_LINE_HEIGHT, gameBoardWidth, (float) BASE_LINE_HEIGHT, bottomLinePaint);
         if (playerBall != null) {
             playerBall.drawOn(canvas);
         }
-        if(enemyBalls != null){
+        if (enemyBalls != null) {
             for (Ball enemyBall : enemyBalls) {
                 enemyBall.drawOn(canvas);
             }
@@ -80,7 +81,6 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     public void newGame() {
         gameBoard = findViewById(R.id.game_board);
-        score = findViewById(R.id.score);
         gameBoard.setOnTouchListener(this);
 
         gameBoardWidth = gameBoard.getWidth();
@@ -102,7 +102,7 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
             @Override
             public void run() {
                 Log.d("testing", "Ball is falling");
-                if(enemyBalls != null){
+                if (enemyBalls != null) {
                     for (Ball enemyBall : enemyBalls) {
                         changeFallingBallPosition(enemyBall);
                     }
@@ -114,17 +114,16 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     }
 
 
-
     public void changeFallingBallPosition(Ball enemyBall) {
         float newY;
         newY = enemyBall.getCenterY() + enemyBall.getFallingSpeed();
         float ballEndPosition = BASE_LINE_HEIGHT - enemyBall.getRadius();
 
-        if(checkCollision(enemyBall)){
+        if (checkCollision(enemyBall)) {
             Log.d("testing", "Collision Happened");
             livesValue--;
             newY = ballNextRound(enemyBall, 0);
-            if(livesValue == 0){
+            if (livesValue == 0) {
                 gameStatus = GameStatus.END;
                 try {
                     pause();
@@ -134,12 +133,12 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
             }
         }
 
-        if( (newY - enemyBall.getFallingSpeed()) == ballEndPosition){
+        if ((newY - enemyBall.getFallingSpeed()) == ballEndPosition) {
             Log.d("testing", " inside lastPostion");
             newY = ballNextRound(enemyBall, enemyBall.getScore());
         }
 
-        if(newY > BASE_LINE_HEIGHT - enemyBall.getRadius()){
+        if (newY > BASE_LINE_HEIGHT - enemyBall.getRadius()) {
             Log.d("testing", " Out of boundary ");
             newY = ballEndPosition;
         }
@@ -147,9 +146,9 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
         invalidate();
     }
 
-    private float ballNextRound(Ball enemyBall, int scoreToAdd){
+    private float ballNextRound(Ball enemyBall, int scoreToAdd) {
         float newY = 0 - enemyBall.getRadius();
-        this.scoreValue += scoreToAdd;
+        scoreValue += scoreToAdd;
         updateGameStats();
 //        if(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE > this.BASE_LINE_HEIGHT ){
 //            Log.d("testing", " Max speed reached. Successfully completed the game");
@@ -158,32 +157,31 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 //        }
 
 //        Setting Max limit of the ball to the 80% of the height of the game. After reaching this limit, speed won't increase.
-        if((enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE) < (0.8*this.BASE_LINE_HEIGHT) ){
-            enemyBall.setFallingSpeed(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
+        if ((enemyBall.getFallingSpeed() * ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE) < (0.8 * this.BASE_LINE_HEIGHT)) {
+            enemyBall.setFallingSpeed(enemyBall.getFallingSpeed() * ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
         }
-        enemyBall.setScore(enemyBall.getScore()+1);
+        enemyBall.setScore(enemyBall.getScore() + 1);
         return newY;
 
     }
 
     private boolean checkCollision(Ball enemyBall) {
         double distanceBetweenEnemyBallAndPlayerBall = calculateDistanceBetweenEnemyBallAndPlayerBall(enemyBall);
-        return (distanceBetweenEnemyBallAndPlayerBall > (playerBall.getRadius() + enemyBall.getRadius()))? false : true;
+        return (distanceBetweenEnemyBallAndPlayerBall > (playerBall.getRadius() + enemyBall.getRadius())) ? false : true;
     }
 
     private double calculateDistanceBetweenEnemyBallAndPlayerBall(Ball enemyBall) {
         float deltaX = enemyBall.getCenterX() - playerBall.getCenterX();
         float deltaY = enemyBall.getCenterY() - playerBall.getCenterY();
-        double distance = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+        double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         return distance;
 
     }
 
     public void endGame() {
-
         gameBoard = findViewById(R.id.game_board);
         gameBoard.setOnTouchListener(this);
-        if(enemyBallFallingTask != null){
+        if (enemyBallFallingTask != null) {
             enemyBallFallingTask.cancel();
         }
         gameBoard.clearAnimation();
@@ -194,7 +192,6 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     @Override
     public boolean onSingleTapUp(MotionEvent event) {
-
         Log.d(LOG_TAG, "onSingleTapUp: called.");
         if (this.gameStatus != GameStatus.PLAYING) {
             return true;
@@ -213,14 +210,12 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-
         gestureDetector.onTouchEvent(event);
         handleAction(event);
         return true;
     }
 
     private void handleAction(MotionEvent event) {
-
         Ball enemyBall = null;
         if (this.gameStatus != GameStatus.NEW) {
             return;
@@ -249,7 +244,6 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     }
 
     private boolean moveBall(MotionEvent event) {
-
         Log.i(LOG_TAG, " before  ball getCenterX  " + playerBall.getCenterX());
         changePosition(event.getX());
         Log.i(LOG_TAG, "after ball getCenterX  " + playerBall.getCenterX());
@@ -259,7 +253,6 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
 
     private void changePosition(float x) {
-
         if (isRightScreenTouch(x)) {
             playerBall.setCenterX(playerBall.getCenterX() + PLAYER_BALL_SPEED);
         } else {
@@ -286,25 +279,25 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     private Ball createEnemyBalls(MotionEvent motionEvent) {
         Log.d("testing", "Creating enemy balls");
-        Ball enemyBall = new Ball(motionEvent.getX(), motionEvent.getY(), 20, redFill);
-        if(this.enemyBalls == null){
+        Ball enemyBall = new Ball(motionEvent.getX(), motionEvent.getY(), ENEMY_BALL_INIT_RADIUS, redFill);
+        if (this.enemyBalls == null) {
             enemyBalls = new ArrayList<>();
         }
         this.enemyBalls.add(enemyBall);
-//        invalidate();
         return enemyBall;
     }
 
     private void growBallSizeThread(MotionEvent event, final Ball ball) {
         Log.d("testing", "growBallSizeThread enemy balls");
         growBallSizeTask = new TimerTask() {
-            int baseRadius = 20; // This is the initial radius of circle from where growing animation starts
+
+            int enemyBallRadius = ENEMY_BALL_INIT_RADIUS;
 
             @Override
             public void run() {
-                Log.d("testing", "Ball is growing - baseRadius " + baseRadius);
-                baseRadius += 20;
-                ball.updateView(baseRadius);
+                Log.d("testing", "Ball is growing - enemyBallRadius " + enemyBallRadius);
+                enemyBallRadius += ENEMY_BALL_RADIUS_INCREMENT;
+                ball.updateView(enemyBallRadius);
                 invalidate();
             }
         };
@@ -357,7 +350,7 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
     public void pause() throws InterruptedException {
         gameBoard.setGameStatus(GameStatus.PAUSED);
-        if(enemyBallFallingTask != null){
+        if (enemyBallFallingTask != null) {
             enemyBallFallingTask.cancel();
         }
         enemyBallFallingTask = null;
