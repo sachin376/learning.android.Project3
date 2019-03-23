@@ -10,7 +10,6 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
-
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -43,7 +42,6 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     private GestureDetector gestureDetector;
     private TimerTask growBallSizeTask;
     private TimerTask enemyBallFallingTask;
-    private boolean isGamePaused = false;
 
     static {
         blackFill = new Paint();
@@ -358,7 +356,7 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     }
 
     public void pause() throws InterruptedException {
-        isGamePaused = true;
+        gameBoard.setGameStatus(GameStatus.PAUSED);
         if(enemyBallFallingTask != null){
             enemyBallFallingTask.cancel();
         }
@@ -367,7 +365,7 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
 
 
     public void resume() {
-        isGamePaused = false;
+        gameBoard.setGameStatus(GameStatus.PLAYING);
         fallEnemyBalls();
     }
 
