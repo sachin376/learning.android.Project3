@@ -5,7 +5,7 @@ import android.graphics.Paint;
 
 public class Ball {
 
-    private static final int ENEMY_BALL_INIT_FALLING_SPEED = 100;
+    private static final int ENEMY_BALL_INIT_FALLING_SPEED = 70;
     private float centerX;
     private float centerY;
     private float radius;

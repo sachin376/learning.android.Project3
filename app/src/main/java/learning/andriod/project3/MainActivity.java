@@ -30,8 +30,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final String BUTTON_LABEL_PAUSE = "Pause";
     private static final String BUTTON_LABEL_RESUME = "Resume";
 
-    private GameStatus gameStatus = GameStatus.NEW;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,9 +61,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.pause:
                 switch (pauseButton.getText().toString()) {
                     case BUTTON_LABEL_PAUSE:
-                        if(gameStatus == GameStatus.PLAYING){
+                        if(gameBoard.getGameStatus() == GameStatus.PLAYING){
                             pauseButton.setText(BUTTON_LABEL_RESUME);
-                            gameStatus = GameStatus.PAUSED;
                             gameBoard.setGameStatus(GameStatus.PAUSED);
                         }
                         try {
@@ -75,9 +72,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                         break;
                     case BUTTON_LABEL_RESUME:
-                        if(gameStatus == GameStatus.PAUSED){
+                        if(gameBoard.getGameStatus() == GameStatus.PAUSED){
                             pauseButton.setText(BUTTON_LABEL_PAUSE);
-                            gameStatus = GameStatus.PLAYING;
                             gameBoard.setGameStatus(GameStatus.PLAYING);
                             gameBoard.resume();
                         }
@@ -87,24 +83,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.newGame:
                 switch (newButton.getText().toString()) {
                     case BUTTON_LABEL_NEW:
-                        gameStatus = GameStatus.NEW;
                         pauseButton.setText(BUTTON_LABEL_PAUSE);
                         newButton.setText(BUTTON_LABEL_START);
-                        gameBoard.setGameStatus(gameStatus);
+                        gameBoard.setGameStatus(GameStatus.NEW);
                         gameBoard.newGame();
                         break;
                     case BUTTON_LABEL_START:
-                        gameStatus = GameStatus.PLAYING;
                         pauseButton.setText(BUTTON_LABEL_PAUSE);
                         newButton.setText(BUTTON_LABEL_END);
-                        gameBoard.setGameStatus(gameStatus);
+                        gameBoard.setGameStatus(GameStatus.PLAYING);
                         gameBoard.startGame();
                         break;
                     case BUTTON_LABEL_END:
-                        gameStatus = GameStatus.END;
                         pauseButton.setText(BUTTON_LABEL_PAUSE);
                         newButton.setText(BUTTON_LABEL_NEW);
-                        gameBoard.setGameStatus(gameStatus);
+                        gameBoard.setGameStatus(GameStatus.END);
                         gameBoard.endGame();
                         break;
                 }

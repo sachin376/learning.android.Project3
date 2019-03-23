@@ -56,8 +56,8 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     }
 
     public interface UpdateGameStatListener {
-        public void updateScore(int score);
-        public void updateLives(int lives);
+        void updateScore(int score);
+        void updateLives(int lives);
     }
 
     public GameView(Context context, AttributeSet xmlAttributes) {
@@ -68,7 +68,7 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
     protected void onDraw(Canvas canvas) {
 //        super.onDraw(canvas);
 //        this.canvas = canvas;
-        canvas.drawLine(0.0f, (float)BASE_LINE_HEIGHT, (float)gameBoardWidth, (float)BASE_LINE_HEIGHT, bottomLinePaint);
+        canvas.drawLine(0.0f, (float)BASE_LINE_HEIGHT, gameBoardWidth, (float)BASE_LINE_HEIGHT, bottomLinePaint);
         if (playerBall != null) {
             playerBall.drawOn(canvas);
         }
@@ -86,7 +86,6 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
         gameBoard.setOnTouchListener(this);
 
         gameBoardWidth = gameBoard.getWidth();
-//        gameBoardHeight = gameBoard.getHeight();
         playerBall = new Ball(gameBoardWidth / 2, BALL_FALLING_HEIGHT, PLAYER_BALL_RADIUS, blackFill);
 
         this.scoreValue = 0;
@@ -128,7 +127,12 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
             livesValue--;
             newY = ballNextRound(enemyBall, 0);
             if(livesValue == 0){
-                endGame();
+                gameStatus = GameStatus.END;
+                try {
+                    pause();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -149,11 +153,16 @@ public class GameView extends View implements GestureDetector.OnGestureListener,
         float newY = 0 - enemyBall.getRadius();
         this.scoreValue += scoreToAdd;
         updateGameStats();
-        if(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE > this.BASE_LINE_HEIGHT ){
-            Log.d("testing", " Max speed reached. Successfully completed the game");
-            endGame();
+//        if(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE > this.BASE_LINE_HEIGHT ){
+//            Log.d("testing", " Max speed reached. Successfully completed the game");
+//            gameBoard.setGameStatus(GameStatus.END);
+//            endGame();
+//        }
+
+//        Setting Max limit of the ball to the 80% of the height of the game. After reaching this limit, speed won't increase.
+        if((enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE) < (0.8*this.BASE_LINE_HEIGHT) ){
+            enemyBall.setFallingSpeed(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
         }
-        enemyBall.setFallingSpeed(enemyBall.getFallingSpeed()*ENEMY_BALL_FALLING_SPEED_INCREMENT_PERCENTAGE);
         enemyBall.setScore(enemyBall.getScore()+1);
         return newY;
 
